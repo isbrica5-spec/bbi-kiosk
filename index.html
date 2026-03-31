@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BBI Kiosk">
+<meta name="theme-color" content="#0f1c2e">
+<title>Business of Barbering Institute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1c2e;
+    --navy-mid: #1a2f4a;
+    --navy-light: #243d5e;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-pale: #f5e9c4;
+    --white: #f8f5ef;
+    --muted: rgba(248,245,239,0.5);
+    --green: #2a9d6f;
+    --green-bg: rgba(42,157,111,0.12);
+    --red: #c0392b;
+    --red-bg: rgba(192,57,43,0.1);
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(201,168,76,0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* subtle grid texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 1rem; }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--navy-mid);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+  .school-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .school-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+  .header-right { text-align: right; }
+  .live-clock {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--white);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .live-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* REMINDER BANNER */
+  .reminder {
+    display: none;
+    background: var(--gold);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--navy);
+    animation: pulse-banner 2s ease-in-out infinite;
+  }
+  .reminder.show { display: block; }
+  @keyframes pulse-banner {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+  }
+  .reminder-icon { font-size: 16px; margin-right: 6px; }
+
+  /* SCHEDULE STRIP */
+  .schedule-strip {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .sched-item {
+    flex-shrink: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .sched-item.active-window { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .sched-time { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--gold); letter-spacing: 1px; }
+  .sched-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .stat {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .stat-n { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; line-height: 1; }
+  .stat-n.in { color: #4cd98a; }
+  .stat-n.out { color: #e07070; }
+  .stat-n.total { color: var(--gold); }
+  .stat-l { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* STUDENT GRID */
+  .grid-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .s-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 0.85rem 0.5rem 0.75rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.1s, border-color 0.2s, background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .s-btn:active { transform: scale(0.94); }
+  .s-btn.in {
+    background: var(--green-bg);
+    border-color: rgba(42,157,111,0.5);
+  }
+  .s-btn.out {
+    background: var(--card-bg);
+    border-color: var(--card-border);
+  }
+  .avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500;
+    margin: 0 auto 7px;
+    letter-spacing: 0.5px;
+  }
+  .s-btn.in .avatar { background: var(--green); color: white; }
+  .s-btn.out .avatar { background: var(--navy-light); color: var(--muted); }
+  .s-name { font-size: 11px; font-weight: 500; color: var(--white); line-height: 1.3; }
+  .s-status { font-size: 10px; margin-top: 3px; }
+  .s-btn.in .s-status { color: #4cd98a; }
+  .s-btn.out .s-status { color: var(--muted); }
+  .s-time { font-size: 9px; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+  /* LOG */
+  .log-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .log-head { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .log-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-name { color: var(--white); }
+  .log-action.in { color: #4cd98a; }
+  .log-action.out { color: #e07070; }
+  .log-time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    padding: 0.5rem 0 1rem;
+    letter-spacing: 0.5px;
+  }
+  .footer span { color: var(--gold); }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--navy-mid);
+    color: var(--white);
+    border: 1px solid var(--gold);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* MOBILE tweaks */
+  @media (max-width: 480px) {
+    .school-name { font-size: 18px; }
+    .live-clock { font-size: 26px; }
+    .student-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div>
+      <div class="school-name">Business of Barbering Institute</div>
+      <div class="school-sub">Student attendance kiosk — tap your name</div>
+    </div>
+    <div class="header-right">
+      <div class="live-clock" id="clock">--:--</div>
+      <div class="live-date" id="date-str"></div>
+    </div>
+  </div>
+
+  <div class="reminder" id="reminder">
+    <span class="reminder-icon">&#9888;</span><span id="reminder-text"></span>
+  </div>
+
+  <div class="schedule-strip" id="sched-strip">
+    <div class="sched-item" data-window="morning"><div class="sched-time">8:00 AM</div><div class="sched-label">Clock in</div></div>
+    <div class="sched-item" data-window="lunch-out"><div class="sched-time">12:00 PM</div><div class="sched-label">Lunch out</div></div>
+    <div class="sched-item" data-window="lunch-in"><div class="sched-time">12:45 PM</div><div class="sched-label">Back in</div></div>
+    <div class="sched-item" data-window="cleanup"><div class="sched-time">4:00 PM</div><div class="sched-label">Clean up</div></div>
+    <div class="sched-item" data-window="end"><div class="sched-time">4:30 PM</div><div class="sched-label">Clock out</div></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-n in" id="cnt-in">0</div><div class="stat-l">Clocked in</div></div>
+    <div class="stat"><div class="stat-n out" id="cnt-out">0</div><div class="stat-l">Not in</div></div>
+    <div class="stat"><div class="stat-n total" id="cnt-total">15</div><div class="stat-l">Total</div></div>
+  </div>
+
+  <div class="grid-label">Students — tap to clock in or out</div>
+  <div class="student-grid" id="student-grid"></div>
+
+  <div class="log-wrap">
+    <div class="log-head">Today's activity log</div>
+    <div id="log-list"><div style="font-size:12px;color:var(--muted)">No activity yet — waiting for first clock-in.</div></div>
+  </div>
+
+  <div class="footer">Business of Barbering Institute &nbsp;|&nbsp; <span>Lexington, KY</span> &nbsp;|&nbsp; Add to home screen for reminders</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STUDENTS = [
+  {name:"Jack Voss",        initials:"JV"},
+  {name:"Anis Tirellil",    initials:"AT"},
+  {name:"Yullin Holliday",  initials:"YH"},
+  {name:"Ross Stocker",     initials:"RS"},
+  {name:"Kevin Guerrero",   initials:"KG"},
+  {name:"Andrew Vazquez",   initials:"AV"},
+  {name:"Garret Cross",     initials:"GC"},
+  {name:"Cristhian Hernandez", initials:"CH"},
+  {name:"Tiffany Irwin",    initials:"TI"},
+  {name:"Mohammed Al-Lawati", initials:"MA"},
+  {name:"Jose Ortiz",       initials:"JO"},
+  {name:"Magda Mendoza",    initials:"MM"},
+  {name:"Cristian Diaz",    initials:"CD"},
+  {name:"Trey Simmons",     initials:"TS"},
+  {name:"Hussein Qasim",    initials:"HQ"},
+];
+
+const SCHEDULE = [
+  {h:7,  m:45, window:"morning",   msg:"Almost 8am — get ready to clock in!"},
+  {h:8,  m:0,  window:"morning",   msg:"8:00 AM — time to clock in! Tap your name."},
+  {h:8,  m:15, window:"morning",   msg:"If you haven't clocked in yet, do it now!"},
+  {h:11, m:50, window:"lunch-out", msg:"Almost noon — clock out for lunch at 12:00 PM."},
+  {h:12, m:0,  window:"lunch-out", msg:"12:00 PM — clock out for lunch now!"},
+  {h:12, m:40, window:"lunch-in",  msg:"Lunch ends at 12:45 — head back in!"},
+  {h:12, m:45, window:"lunch-in",  msg:"12:45 PM — clock back in from lunch!"},
+  {h:15, m:55, window:"cleanup",   msg:"4:00 PM coming up — start your clean-up!"},
+  {h:16, m:0,  window:"cleanup",   msg:"4:00 PM — time to clean up!"},
+  {h:16, m:25, window:"end",       msg:"Almost done! Clock out at 4:30 PM."},
+  {h:16, m:30, window:"end",       msg:"4:30 PM — clock out and have a great evening!"},
+];
+
+const STORAGE_KEY = "bbi_attendance_" + new Date().toDateString();
+
+let state = {};
+let log = [];
+let lastReminder = null;
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = parsed.state || {};
+      log = (parsed.log || []).map(e => ({...e, time: new Date(e.time)}));
+    }
+  } catch(e) {}
+  STUDENTS.forEach(s => {
+    if (!state[s.name]) state[s.name] = {in: false, time: null};
+  });
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({state, log}));
+  } catch(e) {}
+}
+
+function fmt(d) {
+  if (!d) return "";
+  const h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? "pm" : "am";
+  return (h % 12 || 12) + ":" + String(m).padStart(2,"0") + " " + ampm;
+}
+
+function fmtFull(d) {
+  if (!d) return "";
+  return d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  document.getElementById("clock").textContent = (h % 12 || 12) + ":" + String(m).padStart(2,"0") + " " + ampm;
+  document.getElementById("date-str").textContent = fmtFull(now);
+  checkReminders(h, m);
+  updateActiveWindow(h, m);
+}
+
+function checkReminders(h, m) {
+  const key = h + ":" + m;
+  if (key === lastReminder) return;
+  const r = SCHEDULE.find(s => s.h === h && s.m === m);
+  if (r) {
+    lastReminder = key;
+    showReminder(r.msg);
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("BBI Attendance", {body: r.msg, icon: ""});
+    }
+  }
+}
+
+function showReminder(msg) {
+  const el = document.getElementById("reminder");
+  document.getElementById("reminder-text").textContent = msg;
+  el.classList.add("show");
+  clearTimeout(window._reminderTimer);
+  window._reminderTimer = setTimeout(() => el.classList.remove("show"), 90000);
+}
+
+function updateActiveWindow(h, m) {
+  const mins = h * 60 + m;
+  const windows = {
+    "morning":   [8*60, 9*60],
+    "lunch-out": [12*60, 12*60+45],
+    "lunch-in":  [12*60+45, 16*60],
+    "cleanup":   [16*60, 16*60+30],
+    "end":       [16*60+30, 17*60],
+  };
+  document.querySelectorAll(".sched-item").forEach(el => {
+    const w = el.dataset.window;
+    const [start, end] = windows[w] || [0,0];
+    el.classList.toggle("active-window", mins >= start && mins < end);
+  });
+}
+
+function toggle(name) {
+  const s = state[name];
+  s.in = !s.in;
+  const now = new Date();
+  if (s.in) s.time = now;
+  log.unshift({name, action: s.in ? "in" : "out", time: now});
+  saveState();
+  renderGrid();
+  renderStats();
+  renderLog();
+  showToast(name.split(" ")[0] + " clocked " + (s.in ? "in" : "out") + " at " + fmt(now));
+}
+
+function renderGrid() {
+  const grid = document.getElementById("student-grid");
+  grid.innerHTML = "";
+  STUDENTS.forEach(s => {
+    const st = state[s.name];
+    const btn = document.createElement("div");
+    btn.className = "s-btn " + (st.in ? "in" : "out");
+    btn.innerHTML =
+      `<div class="avatar">${s.initials}</div>` +
+      `<div class="s-name">${s.name.split(" ")[0]}<br><span style="font-weight:300;font-size:10px;color:var(--muted)">${s.name.split(" ")[1]}</span></div>` +
+      `<div class="s-status">${st.in ? "Clocked in" : "Not in"}</div>` +
+      `<div class="s-time">${st.in && st.time ? fmt(new Date(st.time)) : ""}</div>`;
+    btn.onclick = () => toggle(s.name);
+    grid.appendChild(btn);
+  });
+}
+
+function renderStats() {
+  const inCount = STUDENTS.filter(s => state[s.name]?.in).length;
+  document.getElementById("cnt-in").textContent = inCount;
+  document.getElementById("cnt-out").textContent = STUDENTS.length - inCount;
+  document.getElementById("cnt-total").textContent = STUDENTS.length;
+}
+
+function renderLog() {
+  const el = document.getElementById("log-list");
+  if (!log.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No activity yet — waiting for first clock-in.</div>';
+    return;
+  }
+  el.innerHTML = log.slice(0, 15).map(e =>
+    `<div class="log-entry">
+      <span class="log-name">${e.name}</span>
+      <span class="log-action ${e.action}">${e.action === "in" ? "clocked in" : "clocked out"}</span>
+      <span class="log-time">${fmt(new Date(e.time))}</span>
+    </div>`
+  ).join("");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function requestNotifications() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+loadState();
+updateClock();
+setInterval(updateClock, 15000);
+renderGrid();
+renderStats();
+renderLog();
+setTimeout(requestNotifications, 2000);
+</script>
+</body>
+</html>
